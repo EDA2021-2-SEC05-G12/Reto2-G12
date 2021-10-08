@@ -43,7 +43,11 @@ def newCatalog():
     Inicializa el catálogo de obras y artistas. Crea una lista vacía para los artistas y otra vacía para las obras.
     """
     catalog = {'artists': lt.newList('ARRAY_LIST'),
-               'artworks': lt.newList('ARRAY_LIST')}
+               'artworks': lt.newList('ARRAY_LIST'),
+               'mediums': mp.newMap(numelements=100, maptype='CHAINING', loadfactor=4.0),
+               'nationalities': mp.newMap(numelements=500, maptype= 'CHAINING', loadfactor=4.0),
+               'artistsIDs': mp.newMap(numelements=10000, maptype='PROBING', loadfactor=4.0)
+               }
 
     return catalog
 
@@ -58,6 +62,7 @@ def addArtist(catalog,artist):
         artist: Artista que se va a agregar
     """
     lt.addLast(catalog['artists'], artist)
+    mp.put(catalog['artistsIDs'], artist['ConstituentID'], artist)
 
 def addArtwork(catalog,artwork):
     """
@@ -67,7 +72,68 @@ def addArtwork(catalog,artwork):
         artwork: Obra que se va a agregar
     """
     lt.addLast(catalog['artworks'], artwork)
+    addArtworkMedium(catalog, artwork)
+    addArtworkNationality(catalog, artwork)
 
+def addArtworkNationality(catalog, artwork):
+    try:
+        artistID = artwork['ConstituentID'][1:-1].split(',')[0]
+        entry = mp.get(catalog['artistsIDs'], artistID)
+        artist = me.getValue(entry)['artist']
+        nationality_name = artist['Nationality']
+        nationalities = catalog['nationalities']
+        if (nationality == ''):
+            medium_name = 'Unknown'
+        existnationality = mp.contains(nationalities, nationality_name)
+        if existnationality:
+            entry = mp.get(nationalities, nationality_name)
+            nationality = me.getValue(entry)
+        else:
+            nationality = newNationality(nationality_name)
+            mp.put(nationalities, nationality_name, nationality)
+        lt.addLast(nationality['artworks'], artworks)
+    except Exception:
+        return None
+
+def newNationality(nationality_name):
+    """
+    Esta funcion crea la estructura de obras asociadas
+    a una nacionalidad.
+    """
+    entry = {'nationality': "", "artworks": None}
+    entry['nationality'] = nationality_name
+    entry['artworks'] = lt.newList('ARRAY_LIST')
+    return entry
+
+def addArtworkMedium(catalog, artwork):
+
+    try:
+        mediums = catalog['mediums']
+        if (artwork['Medium'] != ''):
+            medium_name = artwork['Medium']
+        else:
+            medium_name = 'Unknown'
+        existmedium = mp.contains(mediums, medium_name)
+        if existmedium:
+            entry = mp.get(mediums, medium_name)
+            medium = me.getValue(entry)
+        else:
+            medium = newMedium(medium_name)
+            mp.put(mediums, medium_name, medium)
+        lt.addLast(medium['artworks'], artworks)
+    except Exception:
+        return None
+
+
+def newMedium(medium_name):
+    """
+    Esta funcion crea la estructura de obras asociadas
+    a un medio.
+    """
+    entry = {'medium': "", "artworks": None}
+    entry['medium'] = medium_name
+    entry['artworks'] = lt.newList('ARRAY_LIST')
+    return entry
 # Funciones para creacion de datos
 
 # Funciones de consulta
