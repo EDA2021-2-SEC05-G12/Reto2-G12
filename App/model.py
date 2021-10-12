@@ -46,13 +46,44 @@ def newCatalog():
                'artworks': lt.newList('ARRAY_LIST'),
                'mediums': mp.newMap(numelements=100, maptype='CHAINING', loadfactor=4.0),
                'nationalities': mp.newMap(numelements=500, maptype= 'CHAINING', loadfactor=4.0),
-               'artistsIDs': mp.newMap(numelements=10000, maptype='PROBING', loadfactor=4.0)
+               'artistsIDs': mp.newMap(numelements=10000, maptype='PROBING', loadfactor=4.0),
+               'departments': mp.newMap(numelements=10000, maptype='PROBING', loadfactor=4.0)
                }
 
     return catalog
 
 
 # Funciones para agregar informacion al catalogo
+
+def addArtworkDepartment(catalog, artwork):
+
+    try:
+        departments = catalog['departments']
+        if (artwork['Department'] != ''):
+            department_name = artwork['Department']
+        else:
+            department_name = 'Unknown'
+        existdepartment = mp.contains(departments, department_name)
+        if existdepartment:
+            entry = mp.get(departments, department_name)
+            department = me.getValue(entry)
+        else:
+            department = newDepartment(department_name)
+            mp.put(departments, department_name, department)
+        lt.addLast(department['artworks'], artwork)
+    except Exception:
+        return None
+
+
+def newDepartment(department_name):
+    """
+    Esta funcion crea la estructura de obras asociadas
+    a un medio.
+    """
+    entry = {'department': "", "artworks": None}
+    entry['department'] = department_name
+    entry['artworks'] = lt.newList('ARRAY_LIST')
+    return entry
 
 def addArtist(catalog,artist):
     """
@@ -74,6 +105,7 @@ def addArtwork(catalog,artwork):
     lt.addLast(catalog['artworks'], artwork)
     addArtworkMedium(catalog, artwork)
     addArtworkNationality(catalog, artwork)
+    addArtworkDepartment(catalog, artwork)
 
 def addArtworkNationality(catalog, artwork):
     try:
@@ -91,7 +123,7 @@ def addArtworkNationality(catalog, artwork):
         else:
             nationality = newNationality(nationality_name)
             mp.put(nationalities, nationality_name, nationality)
-        lt.addLast(nationality['artworks'], artworks)
+        lt.addLast(nationality['artworks'], artwork)
     except Exception:
         return None
 
@@ -120,7 +152,7 @@ def addArtworkMedium(catalog, artwork):
         else:
             medium = newMedium(medium_name)
             mp.put(mediums, medium_name, medium)
-        lt.addLast(medium['artworks'], artworks)
+        lt.addLast(medium['artworks'], artwork)
     except Exception:
         return None
 
@@ -272,14 +304,9 @@ def classifyArtworksByNationality(catalog):
 
     return nationalities,artworksSubSet
 
-
 def getArtworksByDepartment(catalog,department):
-    selectedArtworks = lt.newList('ARRAY_LIST')
-    for i in range(1,lt.size(catalog['artworks'])+1):
-        artwork = lt.getElement(catalog['artworks'],i)
-        if artwork['Department'] == department:
-            lt.addLast(selectedArtworks,artwork)
-
+    entry = mp.get(catalog['departments'], department)
+    selectedArtworks = me.getValue(entry)['artworks']
     return selectedArtworks
 
 def estimateCosts(artworks):
