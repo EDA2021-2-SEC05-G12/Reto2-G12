@@ -386,6 +386,8 @@ while True:
             medium = artwork['Medium']
             dimensions = artwork['Dimensions']
             print(f'{title}\t\t{artists}\t\t{date}\t\t{classification}\t\t{medium}\t\t{dimensions}')
+    elif int(inputs[0]) == 8:
+        print(controller.addArtworkNationality(catalog, artwork))
 
     else:
         sys.exit(0)

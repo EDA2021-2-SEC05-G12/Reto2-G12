@@ -138,4 +138,5 @@ def pickFiveMostExpensive(artworks):
 def getArtworksByYearAndArea(catalog,year1,year2,areaMax):
     return model.getArtworksByYearAndArea(catalog,year1,year2,areaMax)
 
-
+def addArtworkNationality(catalog, artwork):
+    return model.addArtworkNationality(catalog, artwork)
