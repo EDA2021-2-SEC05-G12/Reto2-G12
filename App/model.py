@@ -47,7 +47,8 @@ def newCatalog():
                'mediums': mp.newMap(numelements=100, maptype='CHAINING', loadfactor=4.0),
                'nationalities': mp.newMap(numelements=500, maptype= 'CHAINING', loadfactor=4.0),
                'artistsIDs': mp.newMap(numelements=10000, maptype='PROBING', loadfactor=4.0),
-               'departments': mp.newMap(numelements=10000, maptype='PROBING', loadfactor=4.0)
+               'departments': mp.newMap(numelements=10000, maptype='PROBING', loadfactor=4.0),
+               'artistNames': mp.newMap(numelements=10000, maptype = 'PROBING', loadfactor = 4.0)
                }
 
     return catalog
@@ -106,6 +107,7 @@ def addArtwork(catalog,artwork):
     addArtworkMedium(catalog, artwork)
     addArtworkNationality(catalog, artwork)
     addArtworkDepartment(catalog, artwork)
+    addArtistName(catalog, artwork)
 
 def addArtworkNationality(catalog, artwork):
     try:
