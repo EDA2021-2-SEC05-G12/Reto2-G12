@@ -43,6 +43,8 @@ def printMenu():
     print("5- Clasificar las obras por nacionalidad de sus creadores")
     print("6- Transportar obras de un departamento")
     print("7- Proponer una nueva exposición en el museo")
+    print("8- Listar obras por su nacionalidad")
+
     print("0- Salir")
 
 def initCatalog():
@@ -111,6 +113,9 @@ def classifyArtworksByNationality(catalog):
 
 def getArtworksByDepartment(catalog,department):
     return controller.getArtworksByDepartment(catalog,department)
+
+def getArtworksByNationality(catalog, nationality):
+    return controller.getArtworksByNationality(catalog, nationality)
 
 def estimateCosts(artworks):
     return controller.estimateCosts(artworks)
@@ -387,8 +392,9 @@ while True:
             dimensions = artwork['Dimensions']
             print(f'{title}\t\t{artists}\t\t{date}\t\t{classification}\t\t{medium}\t\t{dimensions}')
     elif int(inputs[0]) == 8:
-        print(controller.addArtworkNationality(catalog, artwork))
-
+        nationality = input('Ingrese la nacionalidad: ')
+        selectedNationalities = getArtworksByNationality(catalog, nationality)
+        
     else:
         sys.exit(0)
 sys.exit(0)

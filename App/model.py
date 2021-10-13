@@ -311,6 +311,12 @@ def getArtworksByDepartment(catalog,department):
     selectedArtworks = me.getValue(entry)['artworks']
     return selectedArtworks
 
+def getArtworksByNationality(catalog,nationality):
+    selectedNationalities = None
+    entry = mp.get(catalog['nationalities'], nationality)
+    selectedNationalities = me.getValue(entry)['artworks']
+    return selectedNationalities
+
 def estimateCosts(artworks):
     totalWeight = 0
     totalCost = 0
