@@ -30,6 +30,7 @@ from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
 from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import shellsort as sa
+from DISClib.ADT import orderedmap as omp
 assert cf
 
 """
@@ -48,7 +49,9 @@ def newCatalog():
                'nationalities': mp.newMap(numelements=300, maptype= 'PROBING', loadfactor=0.5),
                'artistsIDs': mp.newMap(numelements=40000, maptype='PROBING', loadfactor=0.9),
                'departments': mp.newMap(numelements=300, maptype='PROBING', loadfactor=0.5),
-               'artistNames': mp.newMap(numelements=10000, maptype = 'PROBING', loadfactor = 8.0)
+               'artistNames': mp.newMap(numelements=10000, maptype = 'PROBING', loadfactor = 4.0),
+               'years': omp.newMap(),
+               'dates': omp.newMap(),
                }
 
     return catalog
@@ -95,6 +98,28 @@ def addArtist(catalog,artist):
     """
     lt.addLast(catalog['artists'], artist)
     mp.put(catalog['artistsIDs'], artist['ConstituentID'], artist)
+    addArtistYear(catalog,artist)
+
+def addArtistYear(catalog,artist):
+    try:
+        years = catalog['years']
+        yearNumber = int(artist['BeginDate'])
+        existYear = omp.contains(years, yearNumber)
+        if existYear:
+            entry = omp.get(years, yearNumber)
+            year = me.getValue(entry)
+        else:
+            year = newYear(yearNumber)
+            omp.put(years,yearNumber,year)
+        lt.addLast(year['artists'],artist)
+
+    except Exception:
+        return None
+
+def newYear(yearNumber):
+    entry = {'year': yearNumber,
+             'artists': lt.newList('ARRAY_LIST')}
+    return entry
 
 def addArtwork(catalog,artwork):
     """
@@ -107,17 +132,39 @@ def addArtwork(catalog,artwork):
     addArtworkMedium(catalog, artwork)
     addArtworkNationality(catalog, artwork)
     addArtworkDepartment(catalog, artwork)
-    #addArtistName(catalog, artwork)
+    addArtistName(catalog, artwork)
+    addArtworkDate(catalog,artwork)
+
+def addArtworkDate(catalog,artwork):
+    try:
+        dates = catalog['dates']
+        dateInt = int(artwork['DateAcquired'].replace('-',''))
+        dateExists = omp.contains(dates,dateInt)
+        if dateExists:
+            entry = omp.get(dates,dateInt)
+            date = me.getValue(entry)
+        else:
+            date = newDate(dateInt)
+            omp.put(dates,dateInt,date)
+        lt.addLast(date['artworks'],artwork)
+    except Exception:
+        return None
+
+def newDate(dateInt):
+    entry = {'date': dateInt,
+             'artworks': lt.newList('ARRAY_LIST')}
+    return entry
+
 
 def addArtworkNationality(catalog, artwork):
     try:
         artistID = artwork['ConstituentID'][1:-1].split(',')[0]
         entry = mp.get(catalog['artistsIDs'], artistID)
-        artist = me.getValue(entry)['artist']
+        artist = me.getValue(entry)
         nationality_name = artist['Nationality']
         nationalities = catalog['nationalities']
-        if (nationality == ''):
-            medium_name = 'Unknown'
+        if (nationality_name == ''):
+            nationality_name = 'Unknown'
         existnationality = mp.contains(nationalities, nationality_name)
         if existnationality:
             entry = mp.get(nationalities, nationality_name)
@@ -168,10 +215,47 @@ def newMedium(medium_name):
     entry['medium'] = medium_name
     entry['artworks'] = lt.newList('ARRAY_LIST')
     return entry
+
+def addArtistName(catalog,artwork):
+    try:
+        artistNames = catalog['artistNames']
+        artistID = artwork['ConstituentID'][1:-1].split(',')[0]
+        entry = mp.get(catalog['artistsIDs'], artistID)
+        artist = me.getValue(entry)
+        artistName = artist['DisplayName']
+        existArtist = mp.contains(artistNames,artistName)
+        if existArtist:
+            entry = mp.get(artistNames,artistName)
+            artist = me.getValue(entry)
+        else:
+            artist = newArtist(artistName)
+            mp.put(artistNames,artistName,artist)
+        mediums = artist['mediums']
+        mediumName = artwork['Medium']
+        if mediumName == '':
+            mediumName = 'Unknown'
+        existMedium = mp.contains(mediums,mediumName)
+        if existMedium:
+            entry = mp.get(mediums,mediumName)
+            medium = me.getValue(entry)
+        else:
+            medium = newMedium(mediumName)
+            mp.put(mediums,mediumName,medium)
+        lt.addLast(medium['artworks'],artwork)
+    except:
+        return None
+
+def newArtist(artistName):
+    entry = {'artistName': '', 'mediums': None}
+    entry['artistName'] = artistName
+    entry['mediums'] = mp.newMap(numelements=50, maptype='CHAINING', loadfactor=3.0)
+    return entry
+
 # Funciones para creacion de datos
 
 # Funciones de consulta
-def getArtistsByDates(catalog,year1,year2):
+
+def getArtistsByDates(catalog, year1, year2):
     """
     Selecciona una porción de la lista de artistas que cumplen con el rango de fechas
     Args:
@@ -184,12 +268,13 @@ def getArtistsByDates(catalog,year1,year2):
     """
     year1 = int(year1)
     year2 = int(year2)
-    selectedArtists = lt.newList('ARRAY_LIST') #En esta lista se guardan los artistas que cumplen
-    for artist in catalog['artists']['elements']:
-        if year1 <= int(artist['BeginDate']) <= year2:
-            lt.addLast(selectedArtists, artist)
-
-    selectedArtists = sortArtists(selectedArtists)
+    artistSets = omp.values(catalog['years'],year1,year2)
+    selectedArtists = lt.newList('ARRAY_LIST')
+    for i in range(1,lt.size(artistSets)+1):
+        set = lt.getElement(artistSets,i)['artists']
+        for j in range(1,lt.size(set)+1):
+            artist = lt.getElement(set,j)
+            lt.addLast(selectedArtists,artist)
 
     return selectedArtists
 
@@ -204,107 +289,53 @@ def getArtworksByDates(catalog,date1,date2):
     Returns: Lista con las obras que cumplen
 
     """
-    # Pasamos las fechas a formato numérico
-    date1 = int(''.join(date1.split('-')))
-    date2 = int(''.join(date2.split('-')))
-    selectedArtworks = lt.newList('ARRAY_LIST') #En esta lista se guardan las obras que cumplen
-    for i in range(1,lt.size(catalog['artworks'])+1):
-        artwork = lt.getElement(catalog['artworks'],i)
-        if artwork['DateAcquired'] != '':
-            date = int(''.join(artwork['DateAcquired'].split('-')))
-            if date1 <= date <= date2:
-                lt.addLast(selectedArtworks,artwork)
-
-    selectedArtworks = sa.sort(selectedArtworks, compareArtworksByDateAcquired)
+    date1 = int(date1.replace('-',''))
+    date2 = int(date2.replace('-', ''))
+    artworkSets = omp.values(catalog['dates'],date1,date2)
+    selectedArtworks = lt.newList('ARRAY_LIST')
+    for i in range(1,lt.size(artworkSets)+1):
+        set = lt.getElement(artworkSets,i)['artworks']
+        for j in range(1,lt.size(set)+1):
+            artwork = lt.getElement(set,j)
+            lt.addLast(selectedArtworks,artwork)
 
     return selectedArtworks
 
+
 def countPurchasedArtworks(artworks):
     count = 0
-    for i in range(1,lt.size(artworks)):
+    for i in range(1,lt.size(artworks)+1):
         artwork = lt.getElement(artworks,i)
         if artwork['CreditLine'] == 'Purchase':
             count += 1
 
     return count
 
-def getArtworksByArtist(catalog,artistName):
-    selectedArtist = None
-    for i in range(1,lt.size(catalog['artists'])+1):
-        artist = lt.getElement(catalog['artists'],i)
-        if artist['DisplayName'] == artistName:
-            selectedArtist = artist
-            break
 
-    constituentID = selectedArtist['ConstituentID']
-    selectedArtworks = lt.newList('ARRAY_LIST')
 
-    for i in range(1,lt.size(catalog['artworks'])+1):
-        artwork = lt.getElement(catalog['artworks'],i)
-        constituentIDs = artwork['ConstituentID'][1:-1].split(',')
-        if constituentID in constituentIDs:
-            lt.addLast(selectedArtworks,artwork)
+def classifyArtworksByTechnique(catalog,artistName):
+    selectedArtist = mp.get(catalog['artistNames'], artistName)
+    techniquesMap = me.getValue(selectedArtist)['mediums']
 
-    return selectedArtworks
 
-def classifyArtworksByTechnique(artworks):
-    techniques = []
-    for artwork in artworks:
-        technique = artwork['Medium']
-        techniques.append(technique)
-
-    techniques = list(set(techniques))
-    artworksSubSets = lt.newList('ARRAY_LIST')
-    for technique in techniques:
-        subSet = lt.newList('ARRAY_LIST')
-        for artwork in artworks:
-            if artwork['Medium'] == technique:
-                lt.addFirst(subSet,artwork)
-        lt.addLast(artworksSubSets,subSet)
-
-    return techniques,artworksSubSets
+    return techniquesMap
 
 def classifyArtworksByNationality(catalog):
-    nationalities = []
-    for i in range(1,lt.size(catalog['artworks'])+1):
-        artwork = lt.getElement(catalog['artworks'],i)
-        constituentIDs = artwork['ConstituentID'][1:-1].split(',')
-        for j in range(1,lt.size(catalog['artists'])+1):
-            artist = lt.getElement(catalog['artists'],j)
-            if artist['ConstituentID'] in constituentIDs:
-                nationality = artist['Nationality']
-                if nationality != "":
-                    nationalities.append(nationality)
+    nationalitiesMap = catalog['nationalities']
+    artworksSubSets = mp.valueSet(nationalitiesMap)
 
-    nationalities = list(set(nationalities))
-    artworksSubSet = lt.newList('ARRAY_LIST')
-    for nationality in nationalities:
-        subSet = lt.newList('ARRAY_LIST')
-        for i in range(1,lt.size(catalog['artists'])+1):
-            artist = lt.getElement(catalog['artists'],i)
-            if artist['Nationality'] == nationality:
-                for j in range(1,lt.size(catalog['artworks'])+1):
-                    artwork = lt.getElement(catalog['artworks'], j)
-                    constituentID = artwork['ConstituentID'][1:-1].split(',')[0]
-                    if constituentID == artist['ConstituentID']:
-                        lt.addLast(subSet,artwork)
+    sortedArtworks = sa.sort(artworksSubSets,compareNationalities)
+    sortedNationalities = lt.newList('ARRAY_LIST')
+    for i in range(1,lt.size(sortedArtworks)+1):
+        subset = lt.getElement(sortedArtworks,i)['artworks']
+        constituentID = lt.getElement(subset,0)['ConstituentID'][1:-1].split(',')[0]
+        artist = me.getValue(mp.get(catalog['artistsIDs'],constituentID))
+        nationality = artist['Nationality']
+        lt.addLast(sortedNationalities,nationality)
 
-        lt.addLast(artworksSubSet,subSet)
+    return sortedNationalities, sortedArtworks
 
-    # Organizamos los subsets y volvemos a buscar las nacionalidades para cada uno
-    artworksSubSet = sa.sort(artworksSubSet,compareNationalities)
-    nationalities = []
-    for i in range(1,lt.size(artworksSubSet)+1):
-        artwork = lt.getElement(lt.getElement(artworksSubSet,i),1)
-        constituentID = artwork['ConstituentID'][1:-1].split(',')[0]
-        for j in range(1,lt.size(catalog['artists'])+1):
-            artist = lt.getElement(catalog['artists'],j)
-            if artist['ConstituentID'] == constituentID:
-                nationality = artist['Nationality']
-                nationalities.append(nationality)
-                break
 
-    return nationalities,artworksSubSet
 
 def getArtworksByDepartment(catalog,department):
     entry = mp.get(catalog['departments'], department)
@@ -437,7 +468,8 @@ def compareArtworksByCost(artwork1,artwork2):
 
 
 def compareNationalities(set1,set2):
-    return lt.size(set1) > lt.size(set2)
+    return lt.size(set1['artworks']) > lt.size(set2['artworks'])
+
 
 # Funciones de ordenamiento
 

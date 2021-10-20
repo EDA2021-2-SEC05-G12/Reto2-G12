@@ -117,8 +117,8 @@ def countPurchasedArtworks(artworks):
 def getArtworksByArtist(catalog,artistName):
     return model.getArtworksByArtist(catalog,artistName)
 
-def classifyArtworksByTechnique(artworks):
-    return model.classifyArtworksByTechnique(artworks)
+def classifyArtworksByTechnique(catalog,artistName):
+    return model.classifyArtworksByTechnique(catalog,artistName)
 
 def classifyArtworksByNationality(catalog):
     return model.classifyArtworksByNationality(catalog)

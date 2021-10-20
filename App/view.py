@@ -24,6 +24,8 @@ import config as cf
 import sys
 import controller
 from DISClib.ADT import list as lt
+from DISClib.ADT import map as mp
+from DISClib.DataStructures import mapentry as me
 assert cf
 
 
@@ -102,11 +104,9 @@ def countPurchasedArtworks(artworks):
     """
     return controller.countPurchasedArtworks(artworks)
 
-def getArtworksByArtist(catalog,artistName):
-    return controller.getArtworksByArtist(catalog,artistName)
 
-def classifyArtworksByTechnique(artworks):
-    return controller.classifyArtworksByTechnique(artworks)
+def classifyArtworksByTechnique(catalog,artistName):
+    return controller.classifyArtworksByTechnique(catalog,artistName)
 
 def classifyArtworksByNationality(catalog):
     return controller.classifyArtworksByNationality(catalog)
@@ -227,20 +227,24 @@ while True:
     elif int(inputs[0]) == 4: # Requerimiento 3
         artistName = input('Ingrese el nombre del artista: ')
 
-        selectedArtworks = getArtworksByArtist(catalog,artistName)
-        techniques,artworksSubSets = classifyArtworksByTechnique(selectedArtworks['elements'])
+        techniquesMap = classifyArtworksByTechnique(catalog,artistName)
+        techniques = mp.keySet(techniquesMap)
+        artworksSubSets = mp.valueSet(techniquesMap)
 
-        sizeArtworks = lt.size(selectedArtworks)
-        sizeTechniques = len(techniques)
-        mostUsedIndex = 1
-        maxValue = 0 # Valor utilizado para comparar la cantidad de obras por técnica
+        sizeArtworks = 0
+        sizeTechniques = mp.size(techniquesMap)
+        maxValue = 0  # Valor utilizado para comparar la cantidad de obras por técnica
+        mostUsedTechnique = ''
         for i in range(1,lt.size(artworksSubSets)+1):
-            subSet = lt.getElement(artworksSubSets,i)
-            if maxValue < lt.size(subSet):
-                maxValue = lt.size(subSet)
-                mostUsedIndex = i
+            subSet = lt.getElement(artworksSubSets,i)['artworks']
+            technique = lt.getElement(techniques,i)
+            sz = lt.size(subSet)
+            sizeArtworks += sz
+            if sz > maxValue:
+                maxValue = sz
+                mostUsedTechnique = technique
 
-        mostUsedTechnique = techniques[mostUsedIndex-1]
+
 
         # Imprimimos...
         print(f'{artistName} tiene {sizeArtworks} obras a su nombre en el museo.')
@@ -250,9 +254,10 @@ while True:
 
         print(f'Las obras de la técnica {mostUsedTechnique} son...')
         print('Título\t\tFecha\t\tTécnica (medio)\t\tDimensiones')
-
+        entry = mp.get(techniquesMap,mostUsedTechnique)
+        mostUsedSubset = me.getValue(entry)
         for i in range(1,maxValue+1):
-            artwork = lt.getElement(lt.getElement(artworksSubSets,mostUsedIndex),i)
+            artwork = lt.getElement(mostUsedSubset['artworks'],i)
             title = artwork['Title']
             date = artwork['Date']
             medium = artwork['Medium']
@@ -265,16 +270,16 @@ while True:
         nationalities,artworksSubSets = classifyArtworksByNationality(catalog)
         print('El top 10 de las nacionalidades es:')
         print('Nacionalidad\t\tTotal de obras')
-        for i in range(10):
-            nationality = nationalities[i]
-            totalArtworks = lt.size(lt.getElement(artworksSubSets,i+1))
+        for i in range(1,11):
+            nationality = lt.getElement(nationalities,i)
+            totalArtworks = lt.size(lt.getElement(artworksSubSets,i)['artworks'])
             print(f'{nationality}\t\t{totalArtworks}')
 
         print()
 
-        print(f'Las primeras y últimas tres obras de la nacionalidad {nationalities[0]} son...')
+        print(f'Las primeras y últimas tres obras de la nacionalidad {lt.getElement(nationalities,1)} son...')
         print('Título\t\tArtista(s)\t\tFecha\t\tMedio\t\tDimensiones')
-        selectedArtworks = lt.getElement(artworksSubSets,1)
+        selectedArtworks = lt.getElement(artworksSubSets,1)['artworks']
         size = lt.size(selectedArtworks)
         firstAndLast = [1, 2, 3, size - 2, size - 1, size]
         for i in firstAndLast:
