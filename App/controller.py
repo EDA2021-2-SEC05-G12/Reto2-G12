@@ -109,7 +109,7 @@ def countPurchasedArtworks(artworks):
     Args:
         artworks: Lista de obras de arte
 
-    Returns: Total de obras
+    Returns: Total de obras 
 
     """
     return model.countPurchasedArtworks(artworks)
