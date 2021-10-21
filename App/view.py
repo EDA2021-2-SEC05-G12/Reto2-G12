@@ -26,6 +26,7 @@ import controller
 from DISClib.ADT import list as lt
 from DISClib.ADT import map as mp
 from DISClib.DataStructures import mapentry as me
+import time
 assert cf
 
 
@@ -138,6 +139,7 @@ while True:
     printMenu()
     inputs = input('Seleccione una opción para continuar\n')
     if int(inputs[0]) == 1: # Carga de datos
+        start_time = time.process_time()
         print("Cargando información de los archivos ....")
         catalog = initCatalog()
         loadData(catalog)
@@ -162,12 +164,17 @@ while True:
         print('- ' + str(lt.getElement(catalog['artworks'], sizeArtworks)['Title']))
 
         print() # Este se usa para dar un salto de línea
+        stop_time = time.process_time()
+        etms = (stop_time - start_time)*1000
+        print('El tiempo de ejecucion es ' + str(etms) + 'ms')
+        print()
 
     elif int(inputs[0]) == 2: # Requerimiento 1
         year1 = int(input('Ingrese el año inicial para la búsqueda: '))
         year2 = int(input('Ingrese el año final para la búsqueda: '))
         print()
 
+        st = time.process_time()
         selectedArtists = getArtistsByDates(catalog, year1, year2)
         selectedSize = lt.size(selectedArtists)
         print(f'Hay {selectedSize} artistas nacidos entre {year1} y {year2}')
@@ -186,12 +193,17 @@ while True:
             nationality = artist['Nationality']
             gender = artist['Gender']
             print(f'{displayName}\t\t{beginDate}\t\t{endDate}\t\t{nationality}\t\t{gender}')
+        spt = time.process_time()
+        etms = (spt - st)*1000
+        print('El tiempo de ejecucion es ' + str(etms) + 'ms')
+        print()
+
 
     elif int(inputs[0]) == 3: # Requerimiento 2
         date1 = input('Ingrese la fecha inicial para la búsqueda (AAAA-MM-DD): ')
         date2 = input('Ingrese la fecha final para la búsqueda (AAAA-MM-DD): ')
         print()
-
+        st = time.process_time()
         selectedArtworks = getArtworksByDates(catalog,date1,date2)
         selectedSize = lt.size(selectedArtworks)
         purchasedSize = countPurchasedArtworks(selectedArtworks)
@@ -223,10 +235,15 @@ while True:
             print(f'{title}\t\t{artists}\t\t{date}\t\t{medium}\t\t{dimensions}')
 
         print()
+        spt = time.process_time()
+        etms = (spt - st)*1000
+        print('El tiempo de ejecucion es ' + str(etms) + 'ms')
+        print()
+
 
     elif int(inputs[0]) == 4: # Requerimiento 3
         artistName = input('Ingrese el nombre del artista: ')
-
+        st = time.process_time()
         techniquesMap = classifyArtworksByTechnique(catalog,artistName)
         techniques = mp.keySet(techniquesMap)
         artworksSubSets = mp.valueSet(techniquesMap)
@@ -265,8 +282,13 @@ while True:
             print(f'{title}\t\t{date}\t\t{medium}\t\t{dimensions}')
 
         print()
+        spt = time.process_time()
+        etms = (spt-st)*1000
+        print('El tiempo de ejecucion es ' + str(etms) + 'ms')
+        print()
 
     elif int(inputs[0]) == 5: # Requerimiento 4
+        st = time.process_time()
         nationalities,artworksSubSets = classifyArtworksByNationality(catalog)
         print('El top 10 de las nacionalidades es:')
         print('Nacionalidad\t\tTotal de obras')
@@ -300,9 +322,14 @@ while True:
             print(f'{title}\t\t{artists}\t\t{date}\t\t{medium}\t\t{dimensions}')
 
         print()
+        spt = time.process_time()
+        etms = (spt-st)*1000
+        print('El tiempo de ejecucion es ' + str(etms) + 'ms')
+        print()
 
     elif int(inputs[0]) == 6: # Requerimiento 5
         department = input('Ingrese el departamento: ')
+        st = time.process_time()
         selectedArtworks = getArtworksByDepartment(catalog,department)
         totalCost,totalWeight,selectedArtworks = estimateCosts(selectedArtworks)
         sizeArtworks = lt.size(selectedArtworks)
@@ -362,7 +389,11 @@ while True:
             print(f'{title}\t\t{artists}\t\t{classification}\t\t{date}\t\t{medium}\t\t{dimensions}\t\t{cost}')
 
         print()
-
+        spt = time.process_time()
+        etms = (spt-st)*1000
+        print('El tiempo de ejecucion es ' + str(etms) + 'ms')
+        print()
+        
     elif int(inputs[0]) == 7: # Requerimiento 6
         year1 = input('Ingrese el año inicial de la exposición: ')
         year2 = input('Ingrese el año final de la exposición: ')
